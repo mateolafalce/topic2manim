@@ -12,7 +12,7 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 
 <div align="center">
   
-## Example
+## Examples
 
 </div>
 
@@ -22,6 +22,15 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 <div align="center">
 
 ![video](./public/output.gif)
+
+</div>
+
+> propmt: how tokenization works in chat gpt?
+> response:
+
+<div align="center">
+
+![video](./public/output2.gif)
 
 </div>
 
@@ -71,3 +80,16 @@ TOPIC=your_topic_here
 2. **Manim code**: For each scene, Python Manim code is generated
 3. **Compilation**: Each scene is compiled into an individual video
 4. **Concatenation**: FFmpeg joins all fragments into a final video
+
+
+## Roadmap
+
+### ✅ Completed
+- [x] **Text Generation Agent**: GPT-based agent that creates educational scripts from any topic
+- [x] **Scene Generation**: Automatic Manim code generation for each scene
+- [x] **Video Compilation**: Individual scene rendering and concatenation
+- [x] **Multi-language Support**: Automatic language detection and localization
+- [ ] **TTS Integration**: Text-to-Speech narration for generated scripts
+  - Voice synthesis for educational content
+  - Audio synchronization with video scenes
+  - Multi-language voice support
