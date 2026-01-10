@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-def generate_manim_code(client, text, animation, index, previous_context=None, provider='openai', model='gpt-4o'):
-    """Generates Manim code using the LLM with previous scene context"""
+def generate_manim_code(client, text, animation, index, previous_context=None, provider='openai', model='gpt-4o', audio_duration=None):
+    """Generates Manim code using the LLM with previous scene context and audio duration"""
     
     # Build context section if it exists
     context_section = ""
@@ -29,6 +29,29 @@ If the previous scene ended with certain elements or style, consider that when d
 CONTEXT: This is the FIRST scene of the video.
 """
     
+    # Add audio duration information if available
+    duration_section = ""
+    if audio_duration:
+        duration_section = f"""
+CRITICAL AUDIO SYNCHRONIZATION:
+- This scene has an audio narration that lasts EXACTLY {audio_duration:.2f} seconds
+- Your animation MUST last EXACTLY {audio_duration:.2f} seconds (not more, not less)
+- Calculate your animation timings to match this duration:
+  * Use self.wait() strategically to fill the time
+  * Adjust run_time parameters in animations to fit within {audio_duration:.2f}s
+  * The total of all animation run_times + wait times MUST equal {audio_duration:.2f}s
+- Example timing breakdown for {audio_duration:.2f}s:
+  * If you have 3 animations, each could be ~{audio_duration/3:.2f}s
+  * Include small waits between animations for better pacing
+"""
+    else:
+        duration_section = """
+TIMING GUIDANCE:
+- This scene should last approximately 6-8 seconds
+- Use short run_time in animations (0.5-1.5 seconds)
+- Minimize use of self.wait() (maximum 0.5-1 second)
+"""
+    
     prompt = f"""{context_section}
 
 Generate Python code for Manim that implements this educational animation.
@@ -36,6 +59,8 @@ Generate Python code for Manim that implements this educational animation.
 CURRENT CONTENT:
 - Narrative text: {text}
 - Animation description: {animation}
+
+{duration_section}
 
 IMPORTANT TECHNICAL RESTRICTIONS:
 1. The class MUST inherit from Scene (not MovingCameraScene, not ThreeDScene)
@@ -48,6 +73,14 @@ IMPORTANT TECHNICAL RESTRICTIONS:
 8. NEVER create empty Text or Paragraph objects (Text('') or Paragraph(''))
 9. NEVER use positioning methods (.move_to(), .align_to(), .next_to()) on empty Text/Paragraph objects
 10. If you need placeholder text, use actual text like Text("Placeholder") instead of Text('')
+
+CRITICAL COLOR USAGE RULES:
+1. ONLY use these basic colors that are always available: WHITE, BLACK, RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK, GRAY
+2. DO NOT use color variants like RED_A, RED_B, ORANGE_D, BLUE_E, etc. (they may not be imported)
+3. If you need custom colors, use hex codes: color="#FF5733" or RGB: rgb_to_color([1, 0.5, 0.2])
+4. For gradients or multiple colors, stick to the basic colors listed above
+5. Example CORRECT usage: Circle(color=RED), Text("Hello", color=BLUE)
+6. Example INCORRECT usage: Circle(color=ORANGE_D), Text("Hello", color=RED_A)
 
 CRITICAL RULES TO AVOID TEXT OVERLAP:
 VERY IMPORTANT - SCREEN SPACE MANAGEMENT:
@@ -153,18 +186,10 @@ RESPONSE FORMAT (JSON):
   "class_name": "ClassName"
 }}
 
-CRITICAL TIME RESTRICTION:
-- This scene must last MAXIMUM 6-8 seconds
-- Use short run_time in animations (0.5-1.5 seconds)
-- Minimize use of self.wait() (maximum 0.5-1 second)
-- Keep animations FAST and DYNAMIC
-- The complete video will be ~60 seconds, so each scene must be BRIEF
-
 IMPORTANT: 
 - The code must be executable without errors
 - Escape quotes correctly in the JSON
 - Keep the animation simple but effective
-- Total duration: depends on text length
 - ALWAYS clean old elements before showing new ones
 """
     

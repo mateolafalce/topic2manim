@@ -87,3 +87,58 @@ def concatenate_videos(video_paths, output_path):
     except Exception as e:
         print(f"[ERROR] Error: {e}")
         return False
+
+
+def merge_video_and_audio(video_path, audio_path, output_path):
+    """
+    Merges video and audio files into a single MP4 file using ffmpeg
+    
+    Args:
+        video_path: Path to the video file (without audio)
+        audio_path: Path to the audio file (MP3)
+        output_path: Path for the final merged video
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    if not os.path.exists(video_path):
+        print(f"[ERROR] Video file not found: {video_path}")
+        return False
+    
+    if not os.path.exists(audio_path):
+        print(f"[ERROR] Audio file not found: {audio_path}")
+        return False
+    
+    try:
+        cmd = [
+            "ffmpeg",
+            "-i", video_path,  # Input video
+            "-i", audio_path,  # Input audio
+            "-c:v", "copy",    # Copy video codec (no re-encoding)
+            "-c:a", "aac",     # Encode audio to AAC
+            "-map", "0:v:0",   # Map video from first input
+            "-map", "1:a:0",   # Map audio from second input
+            output_path,
+            "-y"               # Overwrite if exists
+        ]
+        
+        print(f"\n{'='*80}")
+        print(f"MERGING VIDEO AND AUDIO")
+        print(f"{'='*80}")
+        print(f"Video: {video_path}")
+        print(f"Audio: {audio_path}")
+        print(f"Output: {output_path}\n")
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print(f"[OK] Final video with audio created: {output_path}\n")
+            return True
+        else:
+            print(f"[ERROR] Error merging video and audio:")
+            print(result.stderr)
+            return False
+            
+    except Exception as e:
+        print(f"[ERROR] Error: {e}")
+        return False

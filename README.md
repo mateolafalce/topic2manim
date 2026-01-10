@@ -16,6 +16,30 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 
 </div>
 
+> propmt: How do machines learn to recognize MNIST dataset numbers?
+> 
+> model: claude-sonnet-4-5-20250929
+> 
+> response:
+
+<div align="center">
+
+![video](./public/output5.gif)
+
+</div>
+
+> propmt: What is a Markov chain and how are they related to LLMs?
+> 
+> model: claude-sonnet-4-5-20250929
+> 
+> response:
+
+<div align="center">
+
+![video](./public/output4.gif)
+
+</div>
+
 > propmt: How does Cramer's rule work for system of linear equations?
 > 
 > model: claude-sonnet-4-5-20250929
@@ -81,21 +105,10 @@ python main.py
 
 The final video will be saved in `media/output.mp4`
 
-### LLM Provider Selection
-
-The system automatically selects the LLM provider based on available API keys:
-
-1. **Priority 1**: If `OPENAI_API_KEY` is configured, uses OpenAI GPT models
-2. **Priority 2**: If OpenAI is not available, falls back to Anthropic Claude
-3. **Error**: If neither API key is configured, the system will exit with an error
-
 ## Roadmap
 
 - [x] **Text Generation Agent**: GPT-based agent that creates educational scripts from any topic
 - [x] **Scene Generation**: Automatic Manim code generation for each scene
 - [x] **Video Compilation**: Individual scene rendering and concatenation
 - [x] **Multi-language Support**: Automatic language detection and localization
-- [ ] **TTS Integration**: Text-to-Speech narration for generated scripts
-  - Voice synthesis for educational content
-  - Audio synchronization with video scenes
-  - Multi-language voice support
+- [x] **TTS Integration**: Text-to-Speech narration for generated scripts
