@@ -76,31 +76,10 @@ cp .env.example .env
 ## Usage
 
 ```bash
-TOPIC="how ChatGPT works"
 python main.py
 ```
 
 The final video will be saved in `media/output.mp4`
-
-## Configuration
-
-Edit the `.env` file:
-
-```env
-# API Keys - Configure at least one
-# Priority 1: OpenAI (if available, will be used first)
-OPENAI_API_KEY=your_openai_key_here
-
-# Priority 2: Claude (fallback if OpenAI is not configured)
-CLAUDE_API_KEY=your_claude_key_here
-
-# Model Configuration
-OPENAI_MODEL=gpt-4o
-CLAUDE_MODEL=gemini-2.0-flash-exp
-
-# Video Topic
-TOPIC=your_topic_here
-```
 
 ### LLM Provider Selection
 
@@ -109,20 +88,6 @@ The system automatically selects the LLM provider based on available API keys:
 1. **Priority 1**: If `OPENAI_API_KEY` is configured, uses OpenAI GPT models
 2. **Priority 2**: If OpenAI is not available, falls back to Anthropic Claude
 3. **Error**: If neither API key is configured, the system will exit with an error
-
-This allows you to:
-- Use OpenAI as your primary provider with Claude as backup
-- Use only Claude if you prefer (just configure `CLAUDE_API_KEY`)
-- Switch between providers by commenting/uncommenting API keys
-
-
-## How It Works
-
-1. **Script generation**: GPT-5.2 creates an educational script divided into scenes
-2. **Manim code**: For each scene, Python Manim code is generated
-3. **Compilation**: Each scene is compiled into an individual video
-4. **Concatenation**: FFmpeg joins all fragments into a final video
-
 
 ## Roadmap
 
