@@ -17,7 +17,9 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 </div>
 
 > propmt: How does Cramer's rule work for system of linear equations?
+> 
 > model: claude-sonnet-4-5-20250929
+> 
 > response:
 
 <div align="center">
@@ -27,7 +29,9 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 </div>
 
 > propmt: how chat gpt works?
+> 
 > model: gpt-5.2
+> 
 > response:
 
 <div align="center">
@@ -37,7 +41,9 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 </div>
 
 > propmt: how tokenization works in chat gpt?
+> 
 > model: gpt-5.2
+> 
 > response:
 
 <div align="center">
