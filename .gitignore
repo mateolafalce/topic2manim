@@ -1,0 +1,6 @@
+.env
+media
+content
+video-output.json
+.venv
+__pycache__
