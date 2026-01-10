@@ -1,5 +1,6 @@
 openai
 dotenv
+anthropic
 manim
 
 # apt

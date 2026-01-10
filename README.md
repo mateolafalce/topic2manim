@@ -16,7 +16,18 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 
 </div>
 
+> propmt: How does Cramer's rule work for system of linear equations?
+> model: claude-sonnet-4-5-20250929
+> response:
+
+<div align="center">
+
+![video](./public/output3.gif)
+
+</div>
+
 > propmt: how chat gpt works?
+> model: gpt-5.2
 > response:
 
 <div align="center">
@@ -26,6 +37,7 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 </div>
 
 > propmt: how tokenization works in chat gpt?
+> model: gpt-5.2
 > response:
 
 <div align="center">
@@ -36,7 +48,8 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 
 ## Features
 
-- **Automatic script generation** using GPT-5.2
+- **Multi-LLM Support** with automatic fallback (OpenAI GPT, Claude)
+- **Automatic script generation** using advanced language models
 - **Educational animations** with Manim Community Edition
 - **Multi-language support** (automatically detects topic language)
 - **Optimized videos** of ~60 seconds with multiple scenes
@@ -58,7 +71,7 @@ cp .env.example .env
 
 ```bash
 TOPIC="how ChatGPT works"
-python videoresearch.py
+python main.py
 ```
 
 The final video will be saved in `media/output.mp4`
@@ -68,10 +81,33 @@ The final video will be saved in `media/output.mp4`
 Edit the `.env` file:
 
 ```env
-OPENAI_API_KEY=your_api_key_here
+# API Keys - Configure at least one
+# Priority 1: OpenAI (if available, will be used first)
+OPENAI_API_KEY=your_openai_key_here
+
+# Priority 2: Claude (fallback if OpenAI is not configured)
+CLAUDE_API_KEY=your_claude_key_here
+
+# Model Configuration
 OPENAI_MODEL=gpt-4o
+CLAUDE_MODEL=gemini-2.0-flash-exp
+
+# Video Topic
 TOPIC=your_topic_here
 ```
+
+### LLM Provider Selection
+
+The system automatically selects the LLM provider based on available API keys:
+
+1. **Priority 1**: If `OPENAI_API_KEY` is configured, uses OpenAI GPT models
+2. **Priority 2**: If OpenAI is not available, falls back to Anthropic Claude
+3. **Error**: If neither API key is configured, the system will exit with an error
+
+This allows you to:
+- Use OpenAI as your primary provider with Claude as backup
+- Use only Claude if you prefer (just configure `CLAUDE_API_KEY`)
+- Switch between providers by commenting/uncommenting API keys
 
 
 ## How It Works
