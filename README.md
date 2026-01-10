@@ -84,7 +84,6 @@ TOPIC=your_topic_here
 
 ## Roadmap
 
-### ✅ Completed
 - [x] **Text Generation Agent**: GPT-based agent that creates educational scripts from any topic
 - [x] **Scene Generation**: Automatic Manim code generation for each scene
 - [x] **Video Compilation**: Individual scene rendering and concatenation
