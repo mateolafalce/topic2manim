@@ -1,6 +1,29 @@
+<div align="center">
+
+<img width="489" height="162" alt="image" src="https://github.com/user-attachments/assets/8a61c5a0-d1e6-4de5-a261-6897c18c2830" />
+
+
+
 # Topic2Manim
 
+</div>
+
 Automatic educational video generator using AI and Manim. Converts any topic into a professional animated video with narration and mathematical visualizations.
+
+<div align="center">
+  
+## Example
+
+</div>
+
+> propmt: how chat gpt works?
+> response:
+
+<div align="center">
+
+![video](./public/output.gif)
+
+</div>
 
 ## Features
 
