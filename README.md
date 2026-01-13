@@ -12,6 +12,14 @@ Automatic educational video generator using AI and Manim. Converts any topic int
 
 <div align="center">
   
+## User Interface
+
+![video](./public/output6.gif)
+
+</div>
+
+<div align="center">
+  
 ## Examples
 
 </div>
