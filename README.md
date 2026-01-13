@@ -373,21 +373,5 @@ Then open your browser and navigate to:
 http://localhost:5000
 ```
 
-Use the web interface to:
-- Enter your topic
-- Select LLM provider (Auto, Claude, or OpenAI)
-- Enable/disable TTS narration
-- Monitor real-time progress
-- Download the generated video
 
-### API Endpoints
-
-The server provides the following REST API endpoints:
-
-- `POST /api/generate` - Start video generation
-- `GET /api/progress/<job_id>` - Get generation progress
-- `GET /media/<filename>` - Download generated videos
-- `GET /api/health` - Health check
-
-The final video will be saved in `media/output.mp4`
 
