@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic2Manim - AI Educational Video Generator</title>
+    <meta name="description"
+        content="Transform any topic into professional educational videos with AI-powered animations">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-gradient"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="40" height="40" rx="8" fill="url(#logo-gradient)" />
+                    <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <circle cx="18" cy="26" r="2" fill="white" />
+                    <circle cx="24" cy="26" r="2" fill="white" />
+                    <defs>
+                        <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#8b5cf6" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="logo-text">Topic2Manim</span>
+            </div>
+            <nav class="nav">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#how-it-works" class="nav-link">How it Works</a>
+                <a href="https://github.com/mateolafalce/topic2manim" target="_blank" class="nav-link">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Transform Topics into
+                    <span class="gradient-text">Educational Videos</span>
+                </h1>
+                <p class="hero-subtitle">
+                    AI-powered video generation with Manim animations. Just enter a topic and let our multi-agent system
+                    create professional educational content.
+                </p>
+
+                <!-- Video Generator Form -->
+                <div class="generator-card">
+                    <form id="video-form" class="video-form">
+                        <div class="form-group">
+                            <label for="topic-input" class="form-label">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                                </svg>
+                                Enter Your Topic
+                            </label>
+                            <input type="text" id="topic-input" class="topic-input"
+                                placeholder="e.g., How does machine learning work?" required />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="llm-select" class="form-label">LLM Provider</label>
+                                <select id="llm-select" class="form-select">
+                                    <option value="auto">Auto (Claude → OpenAI)</option>
+                                    <option value="claude">Claude</option>
+                                    <option value="openai">OpenAI</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="tts-toggle" class="form-label">Enable TTS</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="tts-toggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="generate-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            Generate Video
+                        </button>
+                    </form>
+
+                    <!-- Progress Section -->
+                    <div id="progress-section" class="progress-section hidden">
+                        <div class="progress-header">
+                            <h3 class="progress-title">Generating Your Video</h3>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-steps">
+                            <div class="step" id="step-script">
+                                <div class="step-icon">1</div>
+                                <span class="step-label">Script Generation</span>
+                            </div>
+                            <div class="step" id="step-tts">
+                                <div class="step-icon">2</div>
+                                <span class="step-label">Audio Synthesis</span>
+                            </div>
+                            <div class="step" id="step-code">
+                                <div class="step-icon">3</div>
+                                <span class="step-label">Code Generation</span>
+                            </div>
+                            <div class="step" id="step-video">
+                                <div class="step-icon">4</div>
+                                <span class="step-label">Video Compilation</span>
+                            </div>
+                        </div>
+                        <div class="progress-log" id="progress-log"></div>
+                    </div>
+
+                    <!-- Result Section -->
+                    <div id="result-section" class="result-section hidden">
+                        <div class="result-header">
+                            <h3 class="result-title">✨ Video Generated Successfully!</h3>
+                        </div>
+                        <video id="result-video" class="result-video" controls></video>
+                        <div class="result-actions">
+                            <a id="download-btn" class="btn-secondary" download>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Download Video
+                            </a>
+                            <button class="btn-outline" onclick="location.reload()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10" />
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                </svg>
+                                Generate Another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                            <line x1="12" y1="22.08" x2="12" y2="12" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Multi-LLM Support</h3>
+                    <p class="feature-description">Automatic fallback between Claude and OpenAI for maximum reliability
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Manim Animations</h3>
+                    <p class="feature-description">Professional mathematical and educational animations powered by Manim
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="23" />
+                            <line x1="8" y1="23" x2="16" y2="23" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">TTS Integration</h3>
+                    <p class="feature-description">Natural voice narration with OpenAI's text-to-speech technology</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">60-Second Videos</h3>
+                    <p class="feature-description">Optimized content delivery in concise, engaging 1-minute videos</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M5 22h14" />
+                            <path d="M5 2h14" />
+                            <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+                            <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Multi-Language</h3>
+                    <p class="feature-description">Automatic language detection and content generation in any language
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Context Aware</h3>
+                    <p class="feature-description">Maintains visual continuity across scenes with intelligent context
+                        propagation</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="workflow-number">01</div>
+                    <h3 class="workflow-title">Script Generation</h3>
+                    <p class="workflow-description">AI analyzes your topic and creates an educational script divided
+                        into 6-8 engaging scenes</p>
+                </div>
+
+                <div class="workflow-arrow">→</div>
+
+                <div class="workflow-step">
+                    <div class="workflow-number">02</div>
+                    <h3 class="workflow-title">Audio Synthesis</h3>
+                    <p class="workflow-description">Text-to-speech generates natural narration for each scene with
+                        precise timing</p>
+                </div>
+
+                <div class="workflow-arrow">→</div>
+
+                <div class="workflow-step">
+                    <div class="workflow-number">03</div>
+                    <h3 class="workflow-title">Code Generation</h3>
+                    <p class="workflow-description">AI generates Manim Python code for mathematical and visual
+                        animations</p>
+                </div>
+
+                <div class="workflow-arrow">→</div>
+
+                <div class="workflow-step">
+                    <div class="workflow-number">04</div>
+                    <h3 class="workflow-title">Video Assembly</h3>
+                    <p class="workflow-description">Scenes are compiled, concatenated, and merged with audio into final
+                        video</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="40" height="40" rx="8" fill="url(#footer-logo-gradient)" />
+                            <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <circle cx="18" cy="26" r="2" fill="white" />
+                            <circle cx="24" cy="26" r="2" fill="white" />
+                            <defs>
+                                <linearGradient id="footer-logo-gradient" x1="0" y1="0" x2="40" y2="40">
+                                    <stop offset="0%" stop-color="#6366f1" />
+                                    <stop offset="100%" stop-color="#8b5cf6" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span class="logo-text">Topic2Manim</span>
+                    </div>
+                    <p class="footer-tagline">AI-powered educational video generation</p>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/mateolafalce/topic2manim" target="_blank" class="footer-link">GitHub</a>
+                    <a href="https://github.com/mateolafalce/topic2manim/issues" target="_blank"
+                        class="footer-link">Report Issue</a>
+                    <a href="https://github.com/mateolafalce" target="_blank" class="footer-link">Developer</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Topic2Manim. Open Source Project.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

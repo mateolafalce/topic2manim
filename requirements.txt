@@ -2,6 +2,8 @@ openai
 dotenv
 anthropic
 manim
+flask
+flask-cors
 
 # apt
 # - libcairo2-dev

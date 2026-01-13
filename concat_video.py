@@ -16,7 +16,7 @@ def sanitize_filename(filename):
 def compile_video(file_path, class_name, topic_slug, index):
     """Compiles the video using Manim"""
     try:
-        cmd = ["manim", "-pql", file_path, class_name]
+        cmd = ["manim", "-ql", file_path, class_name]
         print(f"\nCompiling: {' '.join(cmd)}")
         
         result = subprocess.run(
@@ -28,10 +28,11 @@ def compile_video(file_path, class_name, topic_slug, index):
         
         if result.returncode == 0:
             print(f"[OK] Video compiled successfully")
-            # Sanitize the topic_slug to match how Manim creates directories
-            sanitized_slug = sanitize_filename(topic_slug)
+            # Manim creates directory based on the Python filename (without extension)
+            # Extract filename without extension from file_path
+            filename_without_ext = os.path.splitext(os.path.basename(file_path))[0]
             # Video will be in media/videos/{filename_without_extension}/480p15/{class_name}.mp4
-            video_path = f"media/videos/{sanitized_slug}-{index}/480p15/{class_name}.mp4"
+            video_path = f"media/videos/{filename_without_ext}/480p15/{class_name}.mp4"
             return video_path
         else:
             print(f"[ERROR] Error compiling video:")

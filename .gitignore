@@ -3,4 +3,5 @@ media
 content
 video-output.json
 .venv
+venv
 __pycache__
