@@ -360,8 +360,6 @@ cp .env.example .env
 
 ## Usage
 
-### Web Interface (Recommended)
-
 Start the Flask server:
 
 ```bash
