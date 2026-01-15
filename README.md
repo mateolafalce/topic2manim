@@ -371,5 +371,10 @@ Then open your browser and navigate to:
 http://localhost:5000
 ```
 
+or 
+
+```bash
+docker compose up
+```
 
 

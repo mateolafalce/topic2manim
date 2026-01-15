@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: topic2manim
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount the media directory to persist generated videos
+      - ./media:/app/media
+      # Mount the public directory
+      - ./public:/app/public
+      # Optional: mount .env file for environment variables
+      - ./.env:/app/.env
+    environment:
+      - FLASK_APP=main.py
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - topic2manim-network
+
+networks:
+  topic2manim-network:
+    driver: bridge

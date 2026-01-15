@@ -1,17 +1,7 @@
 openai
-dotenv
+python-dotenv
 anthropic
 manim
 flask
 flask-cors
-
-# apt
-# - libcairo2-dev
-# - ffmpeg
-# - texlive
-# - texlive-latex-extra
-# - texlive-fonts-extra
-# - texlive-latex-recommended
-# - texlive-science
-# - tipa
-# - libpango1.0-dev
+google-generativeai
