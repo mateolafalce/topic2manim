@@ -28,7 +28,6 @@ dependencies = [
     "manim>=0.18.0",
     "flask>=3.0.0",
     "flask-cors>=4.0.0",
-    "google-generativeai>=0.3.0",
 ]
 
 [project.optional-dependencies]
@@ -67,3 +66,8 @@ python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

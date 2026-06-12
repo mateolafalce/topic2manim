@@ -33,9 +33,9 @@ media/*
 .DS_Store
 Thumbs.db
 
-# Documentation
-README.md
+# Documentation (keep README.md for package build)
 *.md
+!README.md
 
 # Docker
 Dockerfile

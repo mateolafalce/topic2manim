@@ -9,16 +9,39 @@ services:
     ports:
       - "5000:5000"
     volumes:
+      # Mount source for dev (env + code updates without rebuild)
+      - ./src:/app/src
       # Mount the media directory to persist generated videos
       - ./media:/app/media
+      # Persist generated scripts, job state, and videos
+      - ./content:/app/content
       # Mount the public directory
       - ./public:/app/public
       # Optional: mount .env file for environment variables
       - ./.env:/app/.env
+    env_file:
+      - .env
     environment:
       - FLASK_APP=main.py
       - PYTHONUNBUFFERED=1
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - TTS_PROVIDER=${TTS_PROVIDER}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - KIMI_API_KEY=${KIMI_API_KEY}
+      - KIMI_BASE_URL=${KIMI_BASE_URL}
+      - KIMI_MODEL=${KIMI_MODEL}
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - MINIMAX_BASE_URL=${MINIMAX_BASE_URL}
+      - MINIMAX_MODEL=${MINIMAX_MODEL}
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - topic2manim-network
 

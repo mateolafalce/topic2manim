@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Install system dependencies for Manim
 RUN apt-get update && apt-get install -y \
+    build-essential \
     libcairo2-dev \
     ffmpeg \
     texlive \
@@ -23,11 +24,10 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Copy dependency files
-COPY pyproject.toml .
-COPY requirements.txt .
+COPY pyproject.toml README.md .
 
 # Install Python dependencies using uv
-RUN uv pip install --system -r requirements.txt
+RUN uv pip install --system .
 
 # Copy application code
 COPY . .
@@ -41,6 +41,10 @@ EXPOSE 5000
 # Set environment variables
 ENV FLASK_APP=src/main.py
 ENV PYTHONUNBUFFERED=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:5000/api/health || exit 1
 
 # Run the application
 CMD ["python", "src/main.py"]

@@ -8,10 +8,6 @@
     <meta name="description"
         content="Transform any topic into professional educational videos with AI-powered animations">
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
 </head>
 
 <body>
@@ -52,40 +48,276 @@
                     <span class="gradient-text">Educational Videos</span>
                 </h1>
                 <p class="hero-subtitle">
-                    AI-powered video generation with Manim animations. Just enter a topic and let our multi-agent system
-                    create professional educational content.
+                    AI-powered video generation with Manim animations. Enter a topic or paste your own
+                    lecture script — from 60-second explainers to 30-minute long-form lessons.
                 </p>
 
                 <!-- Video Generator Form -->
                 <div class="generator-card">
+                    <div class="input-mode-tabs">
+                        <button type="button" class="input-mode-tab active" data-mode="topic">From Topic</button>
+                        <button type="button" class="input-mode-tab" data-mode="import">Import Script</button>
+                        <button type="button" class="input-mode-tab" data-mode="batch">Batch</button>
+                    </div>
+
                     <form id="video-form" class="video-form">
-                        <div class="form-group">
-                            <label for="topic-input" class="form-label">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
-                                </svg>
-                                Enter Your Topic
-                            </label>
-                            <input type="text" id="topic-input" class="topic-input"
-                                placeholder="e.g., How does machine learning work?" required />
+                        <div id="topic-mode-panel">
+                            <div class="form-group">
+                                <label for="topic-input" class="form-label">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                                    </svg>
+                                    Enter Your Topic
+                                </label>
+                                <input type="text" id="topic-input" class="topic-input"
+                                    placeholder="e.g., How does gradient descent work?" />
+                            </div>
+                        </div>
+
+                        <div id="import-mode-panel" class="hidden">
+                            <div class="form-group">
+                                <label for="import-title-input" class="form-label">Video Title (optional)</label>
+                                <input type="text" id="import-title-input" class="topic-input"
+                                    placeholder="e.g., Introduction to Linear Algebra" />
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="import-format" class="form-label">Script Format</label>
+                                    <select id="import-format" class="form-select">
+                                        <option value="auto" selected>Auto-detect (recommended)</option>
+                                        <option value="loose">Loose Scene Format</option>
+                                        <option value="json">JSON only (automation)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="enrich-animations-toggle" class="form-label">Enrich Animations</label>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="enrich-animations-toggle" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="import-script-input" class="form-label">Paste Your Script</label>
+                                <textarea id="import-script-input" class="import-script-textarea" rows="12"
+                                    placeholder="Scene 1: Opening Hook
+Narration: What the narrator says in this scene.
+Visual: What appears on screen — title, diagram, equation, etc.
+
+Scene 2: Core Idea
+Narration: Explain the main concept clearly.
+Visual: Show the key visual for this idea."></textarea>
+                                <p class="form-hint">Recommended format: <code>Scene N: Title</code>, then <code>Narration:</code> and <code>Visual:</code> on separate lines. Also accepts Voiceover/Animation/On-screen labels, markdown headings, <code>[VISUAL: ...]</code>, or JSON (use JSON only mode).</p>
+                            </div>
+                            <div class="import-actions">
+                                <button type="button" class="btn-outline" id="copy-prompt-btn">Copy ChatGPT/Claude Prompt</button>
+                                <button type="button" class="btn-outline" id="parse-script-btn">Preview Parse</button>
+                                <span id="parse-result-badge" class="parse-result-badge hidden"></span>
+                            </div>
+                            <div id="parse-warnings" class="parse-warnings hidden"></div>
+                            <div id="parse-preview-breakdown" class="parse-preview-breakdown hidden">
+                                <div class="parse-preview-header">
+                                    <strong id="parse-preview-title">Parsed scenes</strong>
+                                    <button type="button" class="btn-text" id="parse-open-editor-btn">Edit in Review Editor ↓</button>
+                                </div>
+                                <div id="parse-preview-scenes" class="parse-preview-scenes"></div>
+                            </div>
+                        </div>
+
+                        <div id="batch-mode-panel" class="hidden">
+                            <div class="form-group">
+                                <label for="batch-input" class="form-label">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="7" height="7" />
+                                        <rect x="14" y="3" width="7" height="7" />
+                                        <rect x="14" y="14" width="7" height="7" />
+                                        <rect x="3" y="14" width="7" height="7" />
+                                    </svg>
+                                    Batch Topics
+                                </label>
+                                <textarea id="batch-input" class="import-script-textarea" rows="8"
+                                    placeholder="How does gradient descent work?
+Introduction to linear algebra
+The history of calculus
+What is a neural network?
+
+One topic per line — each becomes a separate video."></textarea>
+                                <p class="form-hint">Enter one topic per line. Up to 50 videos per batch. All use the same settings below.</p>
+                            </div>
+                        </div>
+
+                        <details class="advanced-settings" id="advanced-settings">
+                            <summary class="advanced-settings-summary">Advanced settings (LLM, voice, model)</summary>
+                            <div class="advanced-settings-body">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="llm-select" class="form-label">LLM Provider</label>
+                                        <select id="llm-select" class="form-select">
+                                            <option value="auto">Auto</option>
+                                            <option value="claude">Claude</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="kimi">Kimi (Moonshot)</option>
+                                            <option value="minimax">MiniMax</option>
+                                            <option value="ollama">Ollama Cloud</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tts-select" class="form-label">Voice Provider</label>
+                                        <select id="tts-select" class="form-select">
+                                            <option value="auto">Auto</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="elevenlabs">ElevenLabs</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group form-group-full">
+                                        <label for="tts-voice-select" class="form-label">Voice</label>
+                                        <select id="tts-voice-select" class="form-select hidden"></select>
+                                        <p id="tts-voice-hint" class="form-hint hidden">Select a TTS provider to choose a voice</p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group form-group-full">
+                                        <label for="llm-model-select" class="form-label">LLM Model</label>
+                                        <select id="llm-model-select" class="form-select hidden"></select>
+                                        <input type="text" id="llm-model-input" class="topic-input hidden"
+                                            placeholder="Enter model name" />
+                                        <p id="llm-model-hint" class="form-hint hidden">Uses the default model from .env</p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="transition-duration" class="form-label">Scene Transition</label>
+                                        <input type="number" id="transition-duration" class="form-select" min="0" max="2" step="0.1" value="0.3" style="width: 100%; padding: 0.6rem 0.75rem;">
+                                        <p class="form-hint">Fade duration between scenes (0 = hard cuts)</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="transition-type" class="form-label">Transition Style</label>
+                                        <select id="transition-type" class="form-select">
+                                            <option value="crossfade" selected>Crossfade</option>
+                                            <option value="fade">Fade to black</option>
+                                            <option value="none">Hard cut</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="critic-min-score" class="form-label">Critic Threshold</label>
+                                        <input type="number" id="critic-min-score" class="form-select" min="0" max="10" step="0.5" value="8" style="width: 100%; padding: 0.6rem 0.75rem;">
+                                        <p class="form-hint">Visual QA pass score (higher = stricter)</p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="critic-max-retries" class="form-label">Critic Retries</label>
+                                        <input type="number" id="critic-max-retries" class="form-select" min="0" max="5" step="1" value="2" style="width: 100%; padding: 0.6rem 0.75rem;">
+                                        <p class="form-hint">How many times critic fixes a scene</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="audio-fade-duration" class="form-label">Audio Fade</label>
+                                        <input type="number" id="audio-fade-duration" class="form-select" min="0" max="2" step="0.1" value="0.5" style="width: 100%; padding: 0.6rem 0.75rem;">
+                                        <p class="form-hint">Fade audio in/out (seconds)</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="title-card-duration" class="form-label">Title Card Duration</label>
+                                        <input type="number" id="title-card-duration" class="form-select" min="0.5" max="5" step="0.5" value="2.5" style="width: 100%; padding: 0.6rem 0.75rem;">
+                                        <p class="form-hint">Seconds to show topic title at start</p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="end-screen-duration" class="form-label">End Screen Duration</label>
+                                        <input type="number" id="end-screen-duration" class="form-select" min="0.5" max="5" step="0.5" value="3" style="width: 100%; padding: 0.6rem 0.75rem;">
+                                        <p class="form-hint">Seconds to show end screen</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="enable-title-card" class="form-label">Enable Title Card</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="enable-title-card" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="enable-end-screen" class="form-label">Enable End Screen</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="enable-end-screen" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="video-length" class="form-label">Video Length</label>
+                                <select id="video-length" class="form-select"></select>
+                                <p id="length-hint" class="form-hint"></p>
+                            </div>
+                            <div class="form-group">
+                                <label for="video-style" class="form-label">Style</label>
+                                <select id="video-style" class="form-select"></select>
+                            </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="llm-select" class="form-label">LLM Provider</label>
-                                <select id="llm-select" class="form-select">
-                                    <option value="auto">Auto (Claude → OpenAI)</option>
-                                    <option value="claude">Claude</option>
-                                    <option value="openai">OpenAI</option>
-                                </select>
+                                <label for="video-quality" class="form-label">Render Quality</label>
+                                <select id="video-quality" class="form-select"></select>
                             </div>
+                            <div class="form-group">
+                                <label for="review-script-toggle" class="form-label">Review Script First</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="review-script-toggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
 
+                        <div id="setup-banner" class="setup-banner hidden" role="alert"></div>
+                        <div id="provider-health" class="provider-health hidden"></div>
+
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="tts-toggle" class="form-label">Enable TTS</label>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="tts-toggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="captions-toggle" class="form-label">Burn Captions</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="captions-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="music-toggle" class="form-label">Background Music</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="music-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row hidden" id="music-volume-row">
+                            <div class="form-group">
+                                <label for="music-volume" class="form-label">Music Volume</label>
+                                <input type="range" id="music-volume" min="-40" max="-10" value="-22" style="width:100%">
+                                <p class="form-hint" id="music-volume-hint">-22 dB</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="sfx-toggle" class="form-label">Sound Effects</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="sfx-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="thumbnails-toggle" class="form-label">Scene Thumbnails</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="thumbnails-toggle" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -110,6 +342,10 @@
                             <div class="progress-fill" id="progress-fill"></div>
                         </div>
                         <div class="progress-steps">
+                            <div class="step" id="step-review">
+                                <div class="step-icon">✎</div>
+                                <span class="step-label">Script Review</span>
+                            </div>
                             <div class="step" id="step-script">
                                 <div class="step-icon">1</div>
                                 <span class="step-label">Script Generation</span>
@@ -128,6 +364,33 @@
                             </div>
                         </div>
                         <div class="progress-log" id="progress-log"></div>
+                        <div id="resume-section" class="resume-section hidden">
+                            <p class="form-hint">Render interrupted — resume from the last completed scene (audio and finished scenes are reused).</p>
+                            <button type="button" class="btn-primary" id="resume-job-btn">Resume Render</button>
+                        </div>
+                        <div class="progress-actions hidden" id="progress-actions">
+                            <button type="button" class="btn-outline" id="cancel-job-btn">Cancel Render</button>
+                        </div>
+                    </div>
+
+                    <!-- Script Review Section -->
+                    <div id="script-review-section" class="script-review-section hidden">
+                        <div class="script-review-header">
+                            <h3 class="progress-title">Review Script</h3>
+                            <p class="form-hint">Edit narration and animations before rendering. After Preview Parse, scenes open here automatically — refine, then approve.</p>
+                        </div>
+                        <div id="script-scenes" class="script-scenes"></div>
+                        <div id="script-linter-panel" class="script-linter-panel hidden">
+                            <div class="linter-metrics" id="linter-metrics"></div>
+                            <div class="linter-suggestions" id="linter-suggestions"></div>
+                        </div>
+                        <div class="script-review-actions">
+                            <button type="button" class="btn-outline" id="preview-scene-btn">Preview Scene 1</button>
+                            <button type="button" class="btn-outline" id="add-scene-btn">+ Add Scene</button>
+                            <button type="button" class="btn-primary" id="approve-script-btn">
+                                Approve &amp; Render Video
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Result Section -->
@@ -146,6 +409,14 @@
                                 </svg>
                                 Download Video
                             </a>
+                            <a id="html-player-btn" class="btn-outline hidden" target="_blank">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                    <line x1="8" y1="21" x2="16" y2="21" />
+                                    <line x1="12" y1="17" x2="12" y2="21" />
+                                </svg>
+                                Open Interactive Player
+                            </a>
                             <button class="btn-outline" onclick="location.reload()">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
@@ -155,7 +426,36 @@
                                 Generate Another
                             </button>
                         </div>
+                        <!-- Quality Metrics Panel -->
+                        <div id="metrics-panel" class="metrics-panel hidden">
+                            <h4 class="metrics-title">📊 Quality Metrics</h4>
+                            <div class="metrics-grid" id="metrics-grid"></div>
+                            <div class="metrics-suggestions" id="metrics-suggestions"></div>
+                        </div>
+                        <!-- Thumbnails Panel -->
+                        <div id="thumbnails-panel" class="thumbnails-panel hidden">
+                            <h4 class="metrics-title">🎬 Scene Thumbnails</h4>
+                            <img id="timeline-image" class="timeline-image hidden" alt="Scene timeline">
+                            <div class="thumbnails-grid" id="thumbnails-grid"></div>
+                        </div>
                     </div>
+
+                    <!-- Batch Progress Section -->
+                    <div id="batch-progress-section" class="batch-progress-section hidden">
+                        <div class="batch-progress-header">
+                            <h3 class="progress-title">Batch Progress</h3>
+                            <span id="batch-progress-count">0 / 0 completed</span>
+                        </div>
+                        <div class="batch-progress-bar">
+                            <div class="batch-progress-fill" id="batch-progress-fill"></div>
+                        </div>
+                        <div id="batch-jobs-list" class="batch-jobs-list"></div>
+                    </div>
+
+                    <details id="recent-jobs-section" class="recent-jobs-section" open>
+                        <summary class="progress-title recent-jobs-summary">Recent Jobs</summary>
+                        <div id="recent-jobs-list" class="recent-jobs-list"></div>
+                    </details>
                 </div>
             </div>
         </div>
@@ -205,7 +505,21 @@
                         </svg>
                     </div>
                     <h3 class="feature-title">TTS Integration</h3>
-                    <p class="feature-description">Natural voice narration with OpenAI's text-to-speech technology</p>
+                    <p class="feature-description">Natural voice narration with OpenAI or ElevenLabs text-to-speech</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Script Import</h3>
+                    <p class="feature-description">Paste markdown or JSON lecture scripts and render without rewriting from scratch</p>
                 </div>
 
                 <div class="feature-card">
@@ -216,8 +530,8 @@
                             <path d="M12 6v6l4 2" />
                         </svg>
                     </div>
-                    <h3 class="feature-title">60-Second Videos</h3>
-                    <p class="feature-description">Optimized content delivery in concise, engaging 1-minute videos</p>
+                    <h3 class="feature-title">Long-Form Lectures</h3>
+                    <p class="feature-description">Generate videos from 45 seconds up to 30-minute lecture-style content</p>
                 </div>
 
                 <div class="feature-card">
@@ -285,6 +599,18 @@
             </div>
         </div>
     </footer>
+
+    <!-- Code Preview Modal -->
+    <div id="code-preview-modal" class="code-preview-modal hidden">
+        <div class="code-preview-backdrop"></div>
+        <div class="code-preview-content">
+            <div class="code-preview-header">
+                <strong>Code Preview</strong>
+                <button type="button" class="code-preview-close" id="code-preview-close">&times;</button>
+            </div>
+            <video id="code-preview-video" class="code-preview-video" controls></video>
+        </div>
+    </div>
 
     <script src="/static/app.js"></script>
 </body>

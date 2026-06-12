@@ -1,35 +1,65 @@
 import json
-import re
-import os
 import time
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+from env_loader import load_app_env
+from json_utils import extract_json_from_llm_response
+from llm_chat import complete_llm
 
-def generate_manim_code(client, text, animation, index, previous_context=None, provider='openai', model='gpt-4o', audio_duration=None, max_retries=3):
-    """Generates Manim code using the LLM with previous scene context, audio duration, and automatic retries"""
-    
+load_app_env()
+
+
+def generate_manim_code(
+    client,
+    text,
+    animation,
+    index,
+    previous_context=None,
+    provider="openai",
+    model="gpt-4o",
+    audio_duration=None,
+    video_settings=None,
+    visual_events=None,
+    max_retries=3,
+    scene_style=None,
+):
+    """Generates Manim code using the LLM with style registry, visual events, and retries."""
+    from video_settings import normalize_video_settings
+    from visual_events import format_events_for_prompt, normalize_visual_events
+
+    video_settings = normalize_video_settings(video_settings)
+    style_guide = video_settings["style_preset"]["visual_style"]
+    scene_duration = video_settings["length_preset"]["scene_duration_sec"]
+
+    events = normalize_visual_events(visual_events)
+    if not events and previous_context:
+        events = normalize_visual_events(previous_context.get("visual_events"))
+    events_section = f"""
+REQUIRED VISUAL EVENTS (implement ALL of these in the animation):
+{format_events_for_prompt(events)}
+"""
+
     # Build context section if it exists
     context_section = ""
+    snippet_block = previous_context.get("similar_snippets", "") if previous_context else ""
     if previous_context:
+        registry_block = previous_context.get("style_registry") or ""
         context_section = f"""
-PREVIOUS SCENE CONTEXT (to maintain continuity):
+PREVIOUS SCENE CONTEXT (maintain continuity):
 - Previous text: {previous_context.get('text', 'N/A')}
 - Previous animation: {previous_context.get('animation', 'N/A')}
-- Previous generated code:
+{registry_block}
+- Previous generated code (reference for style continuity):
 ```python
 {previous_context.get('code', 'N/A')}
 ```
-
-IMPORTANT: Maintain visual and narrative coherence with the previous scene.
-If the previous scene ended with certain elements or style, consider that when designing this scene.
+{snippet_block}
 """
     else:
-        context_section = """
+        context_section = f"""
 CONTEXT: This is the FIRST scene of the video.
+{snippet_block}
 """
-    
+
     # Add audio duration information if available
     duration_section = ""
     if audio_duration:
@@ -37,23 +67,111 @@ CONTEXT: This is the FIRST scene of the video.
 CRITICAL AUDIO SYNCHRONIZATION:
 - This scene has an audio narration that lasts EXACTLY {audio_duration:.2f} seconds
 - Your animation MUST last EXACTLY {audio_duration:.2f} seconds (not more, not less)
-- Calculate your animation timings to match this duration:
-  * Use self.wait() strategically to fill the time
-  * Adjust run_time parameters in animations to fit within {audio_duration:.2f}s
-  * The total of all animation run_times + wait times MUST equal {audio_duration:.2f}s
-- Example timing breakdown for {audio_duration:.2f}s:
-  * If you have 3 animations, each could be ~{audio_duration/3:.2f}s
-  * Include small waits between animations for better pacing
+- TIMING STRATEGY (beat-based, not naive division):
+  1. Read the narration text carefully. Identify the KEY BEATS (moments where a new concept, term, or visual element is introduced).
+  2. Time each animation so the visual element appears AT or JUST BEFORE its corresponding narrative beat — NOT spread evenly.
+  3. Use self.wait() at NATURAL PAUSES in the narration (after a key reveal, before a transition).
+  4. Important reveals should use run_time=1.5-2.5s so the viewer can absorb them.
+  5. Quick transitions between related elements should use run_time=0.6-1.0s.
+  6. The total of all animation run_times + wait times MUST equal {audio_duration:.2f}s.
+  7. BREATHING ROOM IS MANDATORY: after every key visual reveal, add self.wait(1.0). After the aha moment, self.wait(2.0).
+- Example timing for a 10s narration with 3 beats:
+  * Beat 1 (0s): "The derivative tells us the slope" -> Show title + equation (run_time=2s)
+  * Wait 1.0s
+  * Beat 2 (3.5s): "At this point, the slope is zero" -> Highlight the point (run_time=1.5s)
+  * Wait 1.0s
+  * Beat 3 (6s): "So we have a maximum" -> Show result label (run_time=1.5s)
+  * Wait 2.0s at the end for the viewer to absorb
 """
     else:
-        duration_section = """
+        duration_section = f"""
 TIMING GUIDANCE:
-- This scene should last approximately 6-8 seconds
-- Use short run_time in animations (0.5-1.5 seconds)
-- Minimize use of self.wait() (maximum 0.5-1 second)
+- This scene should last approximately {scene_duration} seconds
+- Use beat-based timing: match animation moments to narrative beats
+- Important reveals: run_time=1.5-2.5s; quick transitions: run_time=0.6-1.0s
+- BREATHING ROOM IS MANDATORY: after every key visual reveal, add self.wait(1.0). After the aha moment, self.wait(2.0).
+- Total animation time should match ~{scene_duration}s
 """
-    
+
+    quality_guidance = video_settings.get("quality_preset", {}).get("prompt_guidance", "")
+    quality_block = f"\nQUALITY GUIDANCE:\n{quality_guidance}\n" if quality_guidance else ""
+
+    # Scene style overrides
+    style_override_section = ""
+    if scene_style:
+        palette = scene_style.get("palette")
+        speed = scene_style.get("speed")
+        font_size = scene_style.get("font_size")
+        overrides = []
+        if palette == "warm":
+            overrides.append("Use a WARM palette: #FF6B6B (coral), #FFD93D (yellow), #F4A261 (orange), #E76F51 (terracotta). Background stays #1a1a2e.")
+        elif palette == "cool":
+            overrides.append("Use a COOL palette: #58C4DD (cyan), #4ECDC4 (teal), #45B7D1 (sky), #96CEB4 (sage). Background stays #1a1a2e.")
+        elif palette == "monochrome":
+            overrides.append("Use a MONOCHROME palette: #E2E8F0 (white), #94A3B8 (light gray), #475569 (medium gray), #1E293B (dark gray). Background stays #1a1a2e.")
+        elif palette == "vibrant":
+            overrides.append("Use a VIBRANT high-contrast palette: #FF006E (magenta), #FB5607 (orange), #8338EC (purple), #06FFB4 (neon green). Background stays #1a1a2e.")
+        elif palette == "pastel":
+            overrides.append("Use a PASTEL palette: #FFB3BA (pink), #FFDFBA (peach), #FFFFBA (lemon), #BAFFC9 (mint), #BAE1FF (baby blue). Background stays #1a1a2e.")
+        if speed == "slow":
+            overrides.append("ANIMATION SPEED: Use 2× longer run_time values. Reveals: 3.0-4.0s. Transitions: 1.0-1.5s. Add extra self.wait(1.5) after key moments.")
+        elif speed == "fast":
+            overrides.append("ANIMATION SPEED: Use 0.5× shorter run_time values. Reveals: 0.8-1.2s. Transitions: 0.3-0.5s. Keep waits minimal (0.5s).")
+        if font_size:
+            overrides.append(f"FONT SIZE OVERRIDE: Base all text sizes around {font_size}px. Titles: {font_size + 12}px, Headers: {font_size + 6}px, Body: {font_size}px, Labels: {font_size - 6}px.")
+        if overrides:
+            style_override_section = "\nSCENE STYLE OVERRIDES (apply these to THIS scene only):\n" + "\n".join(f"- {o}" for o in overrides) + "\n"
+
+    style_section = f"""
+VISUAL STYLE GUIDE (maintain consistency with other scenes):
+{style_guide}
+- Use self.camera.background_color = "#1a1a2e" at the start of construct()
+- Match fonts, colors, and layout from previous scenes when context is provided
+{quality_block}
+{style_override_section}
+
+COLOR PALETTE SYSTEM (use ONLY these 4-5 colors per video):
+- Background: "#1a1a2e" (very dark blue-purple)
+- Primary:    "#58C4DD" (3Blue1Blue cyan) or "#6366f1" (indigo)
+- Secondary:  "#83C167" (green) or "#FFD93D" (warm yellow)
+- Accent:     "#FFFF00" (yellow) or "#FF6B6B" (coral)
+- Text:       "#E2E8F0" (soft white)
+- NEVER use more than 5 distinct colors in one scene
+- NEVER use raw RED/GREEN/BLUE as primary element colors (use the palette hexes above)
+
+OPACITY & VISUAL SALIENCE (direct the viewer's eye):
+- PRIMARY element (the thing being explained): opacity 1.0, full brightness
+- SECONDARY elements (supporting labels, context): opacity 0.5-0.7
+- STRUCTURAL elements (axes, grids, backgrounds): opacity 0.15-0.25
+- Example: axis lines at 0.2, the curve at 1.0, annotations at 0.6
+
+TYPOGRAPHY HIERARCHY (consistent sizing):
+- Scene title: font_size=48, weight=BOLD
+- Section header: font_size=36
+- Body explanation: font_size=30
+- Label/annotation: font_size=24
+- Minimum readable size: font_size=20
+- Use monospace font when possible: Text("...", font="Monospace")
+
+BREATHING ROOM (critical for comprehension):
+- After EVERY key reveal: self.wait(1.0) minimum
+- After an "aha" equation or transformation: self.wait(2.0)
+- After scene title appears: self.wait(1.5)
+- Never chain animations without a pause between concepts
+- The viewer needs time to absorb; pauses are NEVER wasted
+
+EASING & MOTION (make it feel alive, not robotic):
+- Default: rate_func=smooth for ALL movements and fades
+- Mechanical processes only: rate_func=linear
+- Playful emphasis: rate_func=rate_functions.ease_out_bounce (rarely)
+- Important reveals: run_time=2.0-2.5s
+- Quick transitions: run_time=0.6-1.0s
+- Text writes: run_time=1.5-2.0s
+"""
+
     prompt = f"""{context_section}
+{events_section}
+{style_section}
 
 Generate Python code for Manim that implements this educational animation.
 
@@ -161,10 +279,17 @@ self.play(Write(part2))
 RECOMMENDED ANIMATIONS:
 - Text: Write(), FadeIn(), AddTextLetterByLetter()
 - Shapes: Create(), DrawBorderThenFill(), GrowFromCenter()
-- Transformations: Transform(), ReplacementTransform(), TransformFromCopy()
+- Transformations: Transform(), ReplacementTransform(), TransformFromCopy(), TransformMatchingShapes()
+- Emphasis & attention: Circumscribe(), Indicate(), Flash(), Wiggle(), ShowPassingFlash()
 - Movement: obj.animate.shift(), obj.animate.move_to(), obj.animate.scale()
 - Cleanup: FadeOut(), self.clear(), self.remove()
 - Groups: VGroup to group objects
+
+EASING & TIMING (make motion feel alive, not robotic):
+- Use rate_func=smooth for natural acceleration/deceleration
+- Use rate_func=run_time=2 for important reveals, rate_func=run_time=0.5 for quick transitions
+- Animate elements in sequence using lagged_start or successive self.play() calls
+- Let important concepts linger on screen; don't rush everything equally
 
 CODE STRUCTURE:
 ```python
@@ -193,104 +318,82 @@ IMPORTANT:
 - Keep the animation simple but effective
 - ALWAYS clean old elements before showing new ones
 """
-    
-    
+
     # Retry loop for handling API failures
     for attempt in range(max_retries):
         try:
             print(f"[Scene {index}] Generating Manim code... (Attempt {attempt + 1}/{max_retries})")
-            
-            if provider == 'openai':
-                # OpenAI API call
-                # Note: For reasoning models, we need extra tokens for reasoning + output
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are an expert in Manim Community Edition (v0.19.1). You generate simple, functional Python code without errors. NEVER use self.camera.frame in Scene. Always respond in valid JSON format."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_completion_tokens=16000
-                )
-                
-                content = response.choices[0].message.content
-                if content is None:
-                    print(f"[ERROR] OpenAI returned None content for scene {index}")
-                    print(f"[DEBUG] Finish reason: {response.choices[0].finish_reason}")
-                    raise Exception(f"OpenAI returned None content. Finish reason: {response.choices[0].finish_reason}")
-                
-                response_text = content.strip()
-                
-            elif provider == 'claude':
-                # Claude API call
-                response = client.messages.create(
-                    model=model,
-                    max_tokens=4000,
-                    system="You are an expert in Manim Community Edition (v0.19.1). You generate simple, functional Python code without errors. NEVER use self.camera.frame in Scene. Always respond in valid JSON format.",
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-                response_text = response.content[0].text.strip()
-            
-            else:
-                raise ValueError(f"Unknown provider: {provider}")
-            
+
+            system_prompt = (
+                "You are an expert in Manim Community Edition (v0.19.1). You generate simple, "
+                "functional Python code without errors. NEVER use self.camera.frame in Scene. "
+                "Always respond in valid JSON format."
+            )
+            response_text = complete_llm(
+                client=client,
+                provider=provider,
+                model=model,
+                system_prompt=system_prompt,
+                user_prompt=prompt,
+            )
+
             # Check for empty response
             if len(response_text) == 0:
                 print(f"[ERROR] Empty response from {provider} API for scene {index}")
                 if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     print(f"[RETRY] Retrying in {wait_time} seconds...")
                     time.sleep(wait_time)
                     continue
                 else:
                     print(f"[ERROR] Max retries reached for scene {index}. Giving up.")
                     return None
-            
-            # Try to extract JSON if wrapped in markdown
-            if "```json" in response_text:
-                response_text = re.search(r'```json\s*(.*?)\s*```', response_text, re.DOTALL).group(1)
-            elif "```" in response_text:
-                response_text = re.search(r'```\s*(.*?)\s*```', response_text, re.DOTALL).group(1)
-            
-            # Parse JSON
+
             try:
-                result = json.loads(response_text)
+                result = extract_json_from_llm_response(response_text)
                 print(f"[OK] Manim code generated for scene {index}")
                 return result
-            except json.JSONDecodeError as json_err:
+            except ValueError as json_err:
                 print(f"[ERROR] Failed to parse JSON for scene {index}: {json_err}")
-                
+
                 if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     print(f"[RETRY] Retrying in {wait_time} seconds...")
                     time.sleep(wait_time)
                     continue
                 else:
                     print(f"[ERROR] Max retries reached for scene {index}. Giving up.")
                     return None
-            
+
         except Exception as e:
             print(f"[ERROR] Error generating code for scene {index}: {e}")
-            
+
             if attempt < max_retries - 1:
-                wait_time = 2 ** attempt
+                wait_time = 2**attempt
                 print(f"[RETRY] Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
                 continue
             else:
                 print(f"[ERROR] Max retries reached for scene {index}. Giving up.")
                 return None
-    
+
     # Should never reach here
     return None
 
 
-def fix_manim_code(client, original_code, error_message, class_name, provider='openai', model='gpt-4o', max_fix_attempts=3):
+def fix_manim_code(
+    client,
+    original_code,
+    error_message,
+    class_name,
+    provider="openai",
+    model="gpt-4o",
+    max_fix_attempts=3,
+):
     """
     REPL-style function to fix Manim code based on compilation errors.
     Sends the error to the LLM and gets corrected code.
-    
+
     Args:
         client: LLM client (OpenAI or Anthropic)
         original_code: The Python code that failed to compile
@@ -299,16 +402,16 @@ def fix_manim_code(client, original_code, error_message, class_name, provider='o
         provider: 'openai' or 'claude'
         model: Model name
         max_fix_attempts: Maximum number of fix attempts
-        
+
     Returns:
         dict: {'content': fixed_code, 'class_name': class_name} or None if all attempts fail
     """
-    
+
     current_code = original_code
-    
+
     for attempt in range(max_fix_attempts):
         print(f"\n[REPL] Fixing code... (Attempt {attempt + 1}/{max_fix_attempts})")
-        
+
         fix_prompt = f"""The following Manim code failed to compile with an error. Please fix the code.
 
 CURRENT CODE:
@@ -341,64 +444,38 @@ RESPONSE FORMAT (JSON):
 Respond ONLY with valid JSON."""
 
         try:
-            if provider == 'openai':
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are an expert debugger for Manim Community Edition (v0.19.1). You fix Python code errors. Always respond in valid JSON format."},
-                        {"role": "user", "content": fix_prompt}
-                    ],
-                    max_completion_tokens=16000
-                )
-                
-                content = response.choices[0].message.content
-                if content is None:
-                    print(f"[REPL] Empty response from LLM")
-                    continue
-                    
-                response_text = content.strip()
-                
-            elif provider == 'claude':
-                response = client.messages.create(
-                    model=model,
-                    max_tokens=4000,
-                    system="You are an expert debugger for Manim Community Edition (v0.19.1). You fix Python code errors. Always respond in valid JSON format.",
-                    messages=[
-                        {"role": "user", "content": fix_prompt}
-                    ]
-                )
-                response_text = response.content[0].text.strip()
-            
-            else:
-                raise ValueError(f"Unknown provider: {provider}")
-            
+            system_prompt = (
+                "You are an expert debugger for Manim Community Edition (v0.19.1). You fix Python "
+                "code errors. Always respond in valid JSON format."
+            )
+            response_text = complete_llm(
+                client=client,
+                provider=provider,
+                model=model,
+                system_prompt=system_prompt,
+                user_prompt=fix_prompt,
+            )
+
             if len(response_text) == 0:
-                print(f"[REPL] Empty response from LLM")
+                print("[REPL] Empty response from LLM")
                 continue
-            
-            # Try to extract JSON if wrapped in markdown
-            if "```json" in response_text:
-                response_text = re.search(r'```json\s*(.*?)\s*```', response_text, re.DOTALL).group(1)
-            elif "```" in response_text:
-                response_text = re.search(r'```\s*(.*?)\s*```', response_text, re.DOTALL).group(1)
-            
-            # Parse JSON
-            result = json.loads(response_text)
-            
-            fix_explanation = result.get('fix_explanation', 'No explanation provided')
+
+            result = extract_json_from_llm_response(response_text)
+
+            fix_explanation = result.get("fix_explanation", "No explanation provided")
             print(f"[REPL] Fix applied: {fix_explanation}")
-            
+
             return {
-                'content': result.get('content', ''),
-                'class_name': result.get('class_name', class_name)
+                "content": result.get("content", ""),
+                "class_name": result.get("class_name", class_name),
             }
-            
+
         except json.JSONDecodeError as json_err:
             print(f"[REPL] Failed to parse fix response: {json_err}")
             continue
         except Exception as e:
             print(f"[REPL] Error during fix attempt: {e}")
             continue
-    
-    print(f"[REPL] Max fix attempts reached. Giving up.")
+
+    print("[REPL] Max fix attempts reached. Giving up.")
     return None
